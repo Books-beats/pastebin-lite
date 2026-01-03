@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pastebin Lite
+
+A simple, secure pastebin application built with Next.js and Vercel KV (Redis).
+
+## Features
+- Create text pastes with optional expiration (TTL) and view limits.
+- Secure, URL-friendly unique IDs.
+- Deterministic testing support via `TEST_MODE`.
+- Mobile-responsive UI.
+
+## Tech Stack
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Persistence**: Vercel KV (Redis)
+- **Styling**: CSS Modules
+
+## Persistence Choice: Vercel KV (Redis)
+I chose Redis (Vercel KV) for this application because:
+1.  **TTL Support**: Redis has native support for key expiration, which aligns perfectly with the time-limited paste requirement.
+2.  **Atomic Counters**: The `INCR`/`DECR` operations allow for race-condition-free view counting.
+3.  **Performance**: Key-Value lookups are extremely fast (`O(1)`), essential for a high-traffic pastebin.
+4.  **Simplicity**: The data model is simple (Key -> Paste Data), avoiding the overhead of a relational schema.
+
+**Optimization**: We store pastes as Redis Hashes (`HSET`) to allow updating the `views_remaining` counter atomically without reading/writing the potentially large `content` string.
 
 ## Getting Started
 
-First, run the development server:
+### 1. Prerequisites
+- Node.js 18+
+- A Vercel KV instance (or local Redis)
 
+### 2. Environment Variables
+Create a `.env.local` file:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+KV_REST_API_URL="your_vercel_kv_url"
+KV_REST_API_TOKEN="your_vercel_kv_token"
+# Optional: Set to '1' to enable time-travel testing headers
+TEST_MODE="0"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Run Locally
+```bash
+npm install
+npm run dev
+```
+Visit `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testing Logic
+The application supports a `TEST_MODE=1` environment variable. When enabled:
+- The app respects the `x-test-now-ms` header to simulate the current time.
+- This allows for deterministic testing of expiration logic.
+- **Security Note**: This mode should only be enabled in testing environments.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API Endpoints
+- `POST /api/pastes`: Create a paste.
+- `GET /api/pastes/:id`: Fetch paste metadata (decrements view count).
+- `GET /api/healthz`: Health check.
