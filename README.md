@@ -1,6 +1,6 @@
 # Pastebin Lite
 
-A simple, secure pastebin application built with Next.js and Vercel KV (Redis).
+A simple, secure pastebin application built with Next.js and Vercel KV (Redis). Check it out at https://pastebin-lite-s1rm.vercel.app/
 
 ## Features
 - Create text pastes with optional expiration (TTL) and view limits.
